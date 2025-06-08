@@ -25,7 +25,7 @@ Route::get('/db-check', function () {
     }
 });
 
-// Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
 // Route::get('/verify-email-token/{token}', [AuthController::class, 'verifyToken']);
 // Route::post('/password/request-reset', [PasswordResetController::class, 'requestReset']);
@@ -33,8 +33,10 @@ Route::post('/register', [AuthController::class, 'register']);
 
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/me', [AuthController::class, 'me']);
+    Route::get('/logout', [AuthController::class, 'logout']);
+    Route::get('/dashboard', function (Request $request) {
+        return response()->json(['message' => 'Dashboard accessed', 'user' => $request->user()]);
+    });
 });
 
 

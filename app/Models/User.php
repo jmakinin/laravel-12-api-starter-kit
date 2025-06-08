@@ -7,13 +7,16 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Support\Facades\Auth;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasRoles, HasApiTokens, HasUuids;
+    use HasFactory, Notifiable, HasRoles, HasApiTokens, HasUuids, LogsActivity;
 
     protected $primaryKey = 'id';
 
@@ -36,6 +39,7 @@ class User extends Authenticatable
     protected $fillable = [
         'firstname',
         'lastname',
+        'phone',
         'email',
         'password',
     ];
@@ -49,6 +53,25 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logAll()
+            ->logExcept(['password', 'remember_token'])
+        ;
+    }
+
+    protected function getDescriptionForEvent(string $eventName): string
+    {
+        $user = Auth::user();
+
+        if ($user) {
+            return "{$user->email} has {$eventName} a user.";
+        }
+
+        return "A guest has {$eventName} a user.";
+    }
 
     /**
      * Get the attributes that should be cast.

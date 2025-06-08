@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class PasswordResetRequest extends FormRequest
 {
@@ -24,5 +26,24 @@ class PasswordResetRequest extends FormRequest
         return [
             'password' => ['required', 'string', 'min:8', 'confirmed']
         ];
+    }
+
+    /**
+     * Handle a failed validation attempt.
+     *
+     * @return void
+     *
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    protected function failedValidation(Validator $validator)
+    {
+        throw (new HttpResponseException(
+            response([
+                'status' => 'failed',
+                'code' => 400,
+                'message' => $validator->errors()->first(),
+                'errors' => $validator->errors()->toArray(),
+            ], 400),
+        ));
     }
 }

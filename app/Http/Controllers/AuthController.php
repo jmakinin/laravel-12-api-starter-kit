@@ -26,18 +26,13 @@ class AuthController extends Controller
         return $this->authService->register($request);
     }
 
-    // public function login(LoginRequest $request): JsonResponse
-    // {
-    //     return $this->authService->login($request);
-    // }
+    public function login(LoginRequest $request)
+    {
+        return $this->authService->login($request);
+    }
 
-    // public function logout(): JsonResponse
-    // {
-    //     return $this->authService->logout();
-    // }
-
-    // public function me(): JsonResponse
-    // {
-    //     return $this->authService->me();
-    // }
+    public function logout(): JsonResponse
+    {
+        return $this->authService->logout();
+    }
 }
