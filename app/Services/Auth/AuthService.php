@@ -17,7 +17,7 @@ class AuthService
 {
     use Response;
 
-    public function register($request)
+    public function register($request): JsonResponse
     {
         try {
 
@@ -57,7 +57,7 @@ class AuthService
         }
     }
 
-    public function login($request)
+    public function login($request): JsonResponse
     {
         try {
             $credentials = $request->only('email', 'password');
