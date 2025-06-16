@@ -1,18 +1,17 @@
 <?php
 
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\PasswordResetController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Http\Request;
+use App\Http\Controllers\FileUploadController;
 
 Route::get('/api-check', function () {
     return response()->json([
         'status' => 'success',
         'message' => 'API is operational',
         'sanctum' => class_exists(\Laravel\Sanctum\Sanctum::class),
-        'timestamp' => now()->toDateTimeString()
+        'timestamp' => now()->toDateTimeString(),
     ]);
 });
 
@@ -34,6 +33,7 @@ Route::post('/register', [AuthController::class, 'register']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/logout', [AuthController::class, 'logout']);
+    Route::post('/file-upload', [FileUploadController::class, 'index']);
     Route::get('/dashboard', function (Request $request) {
         return response()->json(['message' => 'Dashboard accessed', 'user' => $request->user()]);
     });
