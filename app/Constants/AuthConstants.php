@@ -15,4 +15,7 @@ class AuthConstants
 
     public const INVALID_CREDENTIALS = 'Invalid credentials';
     public const UNAUTHORIZED_ACCESS = 'Unauthorized access';
+
+    public const ACCOUNT_LOCKED = 'Account is locked';
+
 }
