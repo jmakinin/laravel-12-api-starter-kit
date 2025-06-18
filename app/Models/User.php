@@ -85,14 +85,25 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
-
+    /**
+     * Relationship with media assets
+     */
     public function mediaAssets()
     {
         return $this->hasMany(MediaAsset::class);
     }
-
+    /**
+     * Get profile images only
+     */
     public function profileImage()
     {
         return $this->hasOne(MediaAsset::class)->where('type', 'profile');
+    }
+    /**
+     * Get documents only
+     */
+    public function documents()
+    {
+        return $this->hasMany(MediaAsset::class)->where('file_type', 'document');
     }
 }
