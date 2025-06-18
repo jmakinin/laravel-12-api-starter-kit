@@ -20,10 +20,15 @@ return new class extends Migration
             $table->string('file_path');
             $table->string('file_url');
             $table->string('mime_type');
-            $table->unsignedBigInteger('size')->nullable(); // file size in bytes
+            $table->unsignedBigInteger('file_size')->nullable(); // file size in bytes
             $table->timestamps();
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('uploaded_by')->references('id')->on('users');
+
+            // Add indexes for better performance
+            $table->index(['user_id', 'file_type']);
+            $table->index('uploaded_by');
         });
     }
 
