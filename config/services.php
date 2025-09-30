@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'mnotify' => [
+        'api_key' => env('MNOTIFY_API_KEY'),
+        'sender' => env('MNOTIFY_SENDER'),
+        'endpoint' => env('MNOTIFY_URL'),
+    ]
+
 ];
