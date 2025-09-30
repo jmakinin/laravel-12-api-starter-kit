@@ -123,4 +123,13 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /**
+     * Frontend URLs
+     */
+
+    'frontend_urls' => [
+        'web' => env('FRONTEND_WEB_URL', 'https://tenet-systems.ism'),
+        'admin' => env('FRONTEND_ADMIN_URL', 'https://admin.tenet-systems.ism'),
+    ],
+
 ];
