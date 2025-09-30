@@ -2,15 +2,21 @@
 
 namespace App\Services\Auth;
 
-use App\Models\User;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Log;
-use App\Traits\Response;
-use Illuminate\Auth\Events\Registered;
-use Illuminate\Auth\Events\Login;
 use App\Constants\AuthConstants;
+use App\DTO\MailData;
+use App\DTO\SMSData;
+use App\Mail\VerificationMail;
+use App\Models\User;
+use App\SMS\SendSMSNotification;
+use App\Traits\Response;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class AuthService
 {
@@ -18,41 +24,83 @@ class AuthService
 
     public function register($request): JsonResponse
     {
-        try {
+        DB::beginTransaction();
 
+        try {
             $user = User::create([
                 'firstname' => $request->firstname,
-                'lastname' => $request->lastname,
-                'email' => $request->email,
-                'phone' => $request->phone,
-                'password' => Hash::make($request->password),
+                'lastname'  => $request->lastname,
+                'email'     => $request->email,
+                'phone'     => $request->phone,
+                'password'  => Hash::make($request->password),
             ]);
 
             // Assign default role
             $role = AuthConstants::ADMIN;
             $user->assignRole($role);
 
-            $token = $user->createToken($request->firstname)->plainTextToken;
+            // Generate token
+            $tokenExpiration = now()->addHours(3);
+            $tokenName = 'account_verification_token_' . $user->email;
+            $token = $user->createToken($tokenName, ['*'], $tokenExpiration)->plainTextToken;
 
+            $telRandomValue = random_bytes(6);
+            $telRandomFingerprint = hash('sha256', $telRandomValue);
+
+            // Update user with verification token
+            $user->update(['verification_token' => $token]);
+
+            // Build frontend verification URL
+            $frontendURL = config('app.frontend_urls.web');
+            $tokenUrl = $frontendURL
+                . '/verify-account?telvalue='
+                . $telRandomValue . '&telfingerprintid='
+                . $telRandomFingerprint . '&telemetrytkn='
+                . $token;
+
+            $mailData = new MailData(
+                "Verification Email",
+                "Welcome to Tenet Digital, please follow the link to confirm your account",
+                ['tokenUrl' => $tokenUrl]
+            );
+
+            // Send verification email
+            Mail::to($user->email)->send(new VerificationMail($mailData));
+
+            // Build SMSData
+            $smsData = new SMSData(
+                code: rand(0, 999999) ,
+                message: 'Your verification code for Tenet Digital: ',
+                number: $user->phone,
+            );
+
+            $user->notifyNow(new SendSMSNotification($smsData));
+
+            // Log + trigger events
             activity('new user')
                 ->causedBy($user)
                 ->withProperties(['ip' => $request->ip()])
-                ->log('new user created')
-            ;
+                ->log('new user created');
 
             event(new Registered($user));
 
+            // Commit since all succeeded
+            DB::commit();
+
             return $this->successResponse([
-                'user' => $user,
+                'user'  => $user,
                 'token' => $token,
             ], AuthConstants::REGISTRATION_SUCCESS, 201);
+
         } catch (\Throwable $e) {
+            DB::rollBack();
+
             Log::error('Registration Error: ' . $e->getMessage(), [
-                'request' => $request->all(),
-                'exception' => $e,
+                'request'    => $request->all(),
+                'exception'  => $e,
             ]);
 
-            return $this->errorResponse($e->getMessage(), 400);
+            return $this->errorResponse("Registration failed. Please try again.", 400);
         }
     }
 
