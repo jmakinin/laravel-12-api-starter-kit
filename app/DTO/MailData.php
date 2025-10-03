@@ -4,14 +4,12 @@ namespace App\DTO;
 
 class MailData
 {
-    public string $title;
-    public string $body;
-    public array $data;
 
-    public function __construct(string $title, string $body, array $data)
+    public function __construct(
+        public readonly string $title,
+        public readonly string $body,
+        public readonly array  $data = []
+    )
     {
-        $this->title = $title;
-        $this->body = $body;
-        $this->data = $data;
     }
 }
