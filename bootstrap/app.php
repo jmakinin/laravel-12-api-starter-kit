@@ -9,8 +9,10 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Spatie\Permission\Exceptions\UnauthorizedException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Routing\Exception\MethodNotAllowedException;
 use Symfony\Component\Routing\Exception\RouteNotFoundException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -20,7 +22,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
+        $middleware->alias([
+            'abilities' => \Laravel\Sanctum\Http\Middleware\CheckAbilities::class,
+            'ability' => \Laravel\Sanctum\Http\Middleware\CheckForAnyAbility::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->renderable(function (Exception $e) {
@@ -28,7 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
             Log::debug($e instanceof \Throwable ? $e->getTraceAsString() : ('error has an error'));
 
             if ($e instanceof ValidationException) {
-                return  response()->json([
+                return response()->json([
                     'status' => 'Error',
                     'message' => $e->errors()
                 ], 422);
@@ -55,6 +60,12 @@ return Application::configure(basePath: dirname(__DIR__))
                 return response()->json([
                     'status' => 'Error',
                     'message' => 'Unauthenticated, please log in'
+                ], 401);
+            }
+            if ($e instanceof MethodNotAllowedHttpException || $e instanceof MethodNotAllowedException) {
+                return response()->json([
+                    'status' => 'Error',
+                    'message' => 'Method Not Allowed'
                 ], 401);
             }
             if ($e instanceof QueryException) {
