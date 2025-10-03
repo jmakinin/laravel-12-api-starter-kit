@@ -50,17 +50,14 @@ class SMSChannel
         try {
             // 3. Make the API request using Laravel's clean HTTP client
             $response = Http::withoutVerifying()
-                ->timeout(10) // Set a timeout
-                ->asForm() // Automatically url-encodes the body data
                 ->post($this->endpoint, [
-                    'key'       => $this->apiKey,
-                    'recipient' => [$recipient], // <-- FIXED: Changed from 'to'
-                    'message'   => $messageWithCode, // <-- FIXED: Changed from 'msg'
-                    'sender'    => $this->sender, // <-- FIXED: Changed from 'sender_id'
+                    'key' => $this->apiKey,
+                    'recipient' => [$recipient],
+                    'message' => $messageWithCode,
+                    'sender' => $this->sender,
                 ]);
 
             if ($response->successful()) {
-                // Log success or handle provider-specific success responses
                 return true;
             }
 
