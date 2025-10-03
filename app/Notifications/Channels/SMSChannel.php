@@ -13,10 +13,10 @@ class SMSChannel
     protected string $apiKey;
     protected string $sender;
 
-    // Use the config helper to fetch service keys
+
     public function __construct()
     {
-        // IMPORTANT: Ensure your config/services.php has the 'mnotify' section
+
         $this->endpoint = config('services.mnotify.endpoint');
         $this->apiKey = config('services.mnotify.api_key');
         $this->sender = config('services.mnotify.sender');
@@ -27,7 +27,7 @@ class SMSChannel
      */
     public function send(object $notifiable, Notification $notification): bool
     {
-        // 1. Check if the notification implements the toSms method
+
         if (!method_exists($notification, 'toSms')) {
             return false;
         }
@@ -35,38 +35,43 @@ class SMSChannel
         /** @var SMSData $smsData */
         $smsData = $notification->toSms($notifiable);
 
-        if (!$smsData instanceof SMSData) {
-            throw new \InvalidArgumentException('toSms must return an App\Data\SmsData object.');
-        }
 
-        // 2. Format the message
         $recipient = $smsData->number;
 
-        // Prepend code if it exists, otherwise just use the message
         $messageWithCode = $smsData->code
-            ? "{$smsData->message}[{$smsData->code}] "
+            ? "{$smsData->message}  [{$smsData->code}]"
             : $smsData->message;
 
         try {
-            // 3. Make the API request using Laravel's clean HTTP client
-            $response = Http::withoutVerifying()
-                ->post($this->endpoint, [
-                    'key' => $this->apiKey,
-                    'recipient' => [$recipient],
-                    'message' => $messageWithCode,
-                    'sender' => $this->sender,
-                ]);
+
+            $urlWithKey = $this->endpoint . '?key=' . $this->apiKey;
+
+            // Prepare the data payload
+            $payload = [
+                'recipient' => [$recipient],
+                'sender' => $this->sender,
+                'message' => $messageWithCode,
+            ];
+
+            $response = Http::post($urlWithKey, $payload);
 
             if ($response->successful()) {
-                return true;
+
+                $apiResponse = $response->json();
+
+                if (isset($apiResponse['status']) && $apiResponse['status'] === 'success') {
+                    return true;
+                }
+
+                \Log::error('SMS API Logical Failure (2xx status): ' . json_encode($apiResponse) . ' To: ' . $recipient);
+                return false;
             }
 
-            // If the request didn't return a 2xx status, log the failure
-            \Log::error('SMS API Failed: ' . $response->status() . ' Body: ' . $response->body() . ' To: ' . $recipient);
+            \Log::error('SMS API HTTP Failed: ' . $response->status() . ' Body: ' . $response->body() . ' To: ' . $recipient);
             return false;
 
         } catch (Throwable $e) {
-            // Log any connection or Guzzle exceptions
+
             \Log::error('SMS Connection Error: ' . $e->getMessage() . ' To: ' . $recipient);
             return false;
         }
