@@ -8,6 +8,7 @@ use App\DTO\SMSData;
 use App\Mail\PasswordResetMail;
 use App\SMS\SendSMSNotification;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -41,12 +42,12 @@ class PasswordResetService
 
         try {
             DB::table('password_reset_tokens')->where('email', $user->email)->delete();
-
+            
             if ($reset_channel === "email") {
                 $token = Str::random(60);
                 $this->sendResetEmail($user, $token);
             } elseif ($reset_channel === "sms") {
-                $token = Str::random(100000, 99999);
+                $token = str_pad(random_int(10000, 99999), 5, '0', STR_PAD_LEFT);
                 $this->sendSMSReset($user, $token);
             } else {
                 $this->errorResponse("method is invalid for this user");
@@ -85,8 +86,9 @@ class PasswordResetService
     public function verifyResetToken(string $identifier, string $token, string $reset_channel)
     {
         $user = $this->findUserByIdentifier($identifier, $reset_channel);
+
         if (!$user) {
-            return $this->errorResponse("Verification failed");
+            return $this->errorResponse("No account found for the provided identifier.");
         }
 
         //find the token record
@@ -95,18 +97,19 @@ class PasswordResetService
             ->first();
 
         if (!$resetRecord) {
-            $this->errorResponse("Token not found or expired. Please try again.");
+            return $this->errorResponse("Token not found. Please try again.");
         }
 
         //verify token/code expiration
-        if (now()->diffInMinutes($resetRecord->created_at) > self::RESET_TOKEN_LIFETIME_MINUTES) {
+        $createdAt = Carbon::parse($resetRecord->created_at);
+        if (now()->diffInMinutes($createdAt) > self::RESET_TOKEN_LIFETIME_MINUTES) {
             DB::table('password_reset_tokens')->where('email', $user->email)->delete();
-            $this->errorResponse("Token/Code has expired. Please try again.");
+            return $this->errorResponse("Token/Code has expired. Please try again.");
         }
 
         // Verify the token/code hash
         if (!Hash::check($token, $resetRecord->token)) {
-            $this->errorResponse("Invalid token/code provided.");
+            return $this->errorResponse("Invalid token/code provided. Please try again.");
         }
 
         //token/code verified, delete token and issue api token
@@ -188,11 +191,12 @@ class PasswordResetService
     {
         $SMSData = new SMSData(
             code: $code,
-            message: "Your password reset code for Tenet Digital is",
+            message: "Your password reset code for Tenet Digital is:",
             number: $user->phone
         );
 
         $user->notifyNow(new SendSMSNotification($SMSData));
+
     }
 
 }
