@@ -24,7 +24,7 @@ class UserSeeder extends Seeder
         ], [
             'firstname' => 'John',
             'lastname' => 'Doe',
-            'phone' => '02000001122',
+            'phone' => '0200000001',
             'password' => 'password',
             'status' => 'active',
         ]);
@@ -45,7 +45,7 @@ class UserSeeder extends Seeder
         ], [
             'firstname' => 'John',
             'lastname' => 'Doe',
-            'phone' => '02000001122',
+            'phone' => '0200000002',
             'password' => 'password',
             'status' => 'active',
         ]);
@@ -67,7 +67,7 @@ class UserSeeder extends Seeder
         ], [
             'firstname' => 'Jane',
             'lastname' => 'Doe',
-            'phone' => '0200011122',
+            'phone' => '0200000003',
             'password' => 'password',
             'status' => 'active',
         ]);
@@ -89,7 +89,7 @@ class UserSeeder extends Seeder
         ], [
             'firstname' => 'Jeane',
             'lastname' => 'Doe',
-            'phone' => '0200011122',
+            'phone' => '0200000004',
             'password' => 'password',
             'status' => 'active',
         ]);
