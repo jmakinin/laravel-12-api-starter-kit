@@ -53,7 +53,7 @@ class SMSChannel
                 'message' => $messageWithCode,
             ];
 
-            $response = Http::post($urlWithKey, $payload);
+            $response = Http::withHeaders(['Content-Type' => 'application/json'])->post($urlWithKey, $payload);
 
             if ($response->successful()) {
 
